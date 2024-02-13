@@ -29,6 +29,7 @@ const OpnposTable = ({ selectedFund }) => {
   console.log('OpnposTable selectedFund',selectedFund)
     const [opnposData, setOpnposData] = useState([]);
     const [selectedRow, setSelectedRow] = useState(null); // Add state to track the selected row
+    const [priceHistory, setPriceHistory] = useState([]);
 
     // Fetch Opnpos data from the API based on the selected fund
     useEffect(() => {
@@ -103,7 +104,42 @@ const OpnposTable = ({ selectedFund }) => {
       },
     ],
   });
-  const updateChartData = (qtyHistory) => {
+  const updateChartData = (qtyHistory, priceHistory) => {
+    const labels = qtyHistory.map((item) => {
+      const formattedDate = new Date(item.trade_date).toLocaleDateString(undefined, {
+        weekday: 'short',
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+      });
+      return formattedDate;
+    });
+
+    const qtyData = qtyHistory.map((item) => item.remaining_qty);
+    const priceData = priceHistory.map((item) => item.price);
+
+    setChartData({
+      labels,
+      datasets: [
+        {
+          label: 'QTY',
+          data: qtyData,
+          fill: false,
+          borderColor: 'rgba(75,192,192,1)',
+          lineTension: 0.1,
+        },
+        {
+          label: 'Book Price',
+          data: priceData,
+          fill: false,
+          borderColor: 'rgba(192,75,192,1)',
+          lineTension: 0.1,
+        },
+      ],
+    });
+  };
+
+  const updateChartDataOLD = (qtyHistory) => {
     const labels = qtyHistory.map((item) => {
       // Format the trade_date using toLocaleDateString
       const formattedDate = new Date(item.trade_date).toLocaleDateString(undefined, {
@@ -131,39 +167,43 @@ const OpnposTable = ({ selectedFund }) => {
     });
   };
     // Step 7: Fetch QTY history when both selectedFund and selectedTicker change
-  useEffect(() => {
-    const fetchQtyHistory = async () => {
-      try {
-        // Use the selectedFund and selectedTicker in the API call
-        const response = await fetch(
-          `http://127.0.0.1:5000/api/getQty/${selectedFund}/${selectedTicker}`
-        );
-        const dataText = await response.text();
-        const data = JSON.parse(dataText);
-
-        // Ensure that data.qty_history is an array before updating the state
-        if (Array.isArray(data.data)) {
-          console.log('QTY history data', data);
-
-          setQtyHistory(data.data);
-          updateChartData(data.data); // Update chart data
-          console.log('QTY history data', data);
-        } else {
-          console.error('Invalid QTY history data format:', data);
-          setQtyHistory([]); // Set an empty array in case of unexpected data format
+    useEffect(() => {
+      const fetchHistory = async () => {
+        try {
+          const qtyResponse = await fetch(
+            `http://127.0.0.1:5000/api/getQty/${selectedFund}/${selectedTicker}`
+          );
+          const qtyDataText = await qtyResponse.text();
+          const qtyData = JSON.parse(qtyDataText);
+  
+          const priceResponse = await fetch(
+            `http://127.0.0.1:5000/api/getCash/${selectedFund}/${selectedTicker}`
+          );
+          const priceDataText = await priceResponse.text();
+          const priceData = JSON.parse(priceDataText);
+  
+          if (Array.isArray(qtyData.data) && Array.isArray(priceData.data)) {
+            setQtyHistory(qtyData.data);
+            setPriceHistory(priceData.data);
+            updateChartData(qtyData.data, priceData.data); // Update chart data
+          } else {
+            console.error('Invalid QTY or Price history data format:', qtyData, priceData);
+            setQtyHistory([]);
+            setPriceHistory([]);
+          }
+        } catch (error) {
+          console.error('Error fetching QTY or Price history:', error);
+          setQtyHistory([]);
+          setPriceHistory([]);
         }
-      } catch (error) {
-        console.error('Error fetching QTY history:', error);
-        setQtyHistory([]); // Set an empty array in case of an error
+      };
+  
+      // Fetch QTY and Price history only when both selectedFund and selectedTicker are available
+      if (selectedFund && selectedTicker) {
+        fetchHistory();
       }
-    };
-
-    // Fetch QTY history only when both selectedFund and selectedTicker are available
-    if (selectedFund && selectedTicker) {
-      fetchQtyHistory();
-    }
-  }, [selectedFund, selectedTicker]); // Trigger the fetch when selectedFund or selectedTicker changes
-    // Map Opnpos data to table rows
+    }, [selectedFund, selectedTicker]);
+      // Map Opnpos data to table rows
     const rows = opnposData.map((item) => ({
       FUND: item.fund,
       TKR: item.tkr,

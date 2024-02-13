@@ -148,7 +148,7 @@ function FundDashboard() {
     }
   }, [fundName]);
   
-  const filterDataByWeekday = (data) => {
+  const OLDfilterDataByWeekday = (data) => {
     const currentDate = new Date();
     // Get the current weekday (0 for Sunday, 1 for Monday, ..., 6 for Saturday)
     const currentWeekday = currentDate.getDay();
@@ -159,6 +159,7 @@ function FundDashboard() {
     const backendDayOfWeek = currentWeekday === 0 ? 7 : currentWeekday;
 
     console.log('backendDayOfWeek', backendDayOfWeek)
+    
     const filtered = data.filter(item => (
       parseFloat(item.probability) !== 0 && parseInt(item.day_of_week, 10) === backendDayOfWeek
       // item.day_of_week === currentWeekday
@@ -167,6 +168,23 @@ function FundDashboard() {
     setFilteredData(filtered);
 
   };
+
+  const filterDataByWeekday = (data) => {
+    const currentDate = new Date();
+    // Get the current weekday (0 for Sunday, 1 for Monday, ..., 6 for Saturday)
+    const currentWeekday = currentDate.getDay();
+
+    console.log('currentWeekday now', currentWeekday);
+
+    const backendDayOfWeek = currentWeekday === 0 ? 7 : currentWeekday + 1; // Adjust Sunday to 7
+
+    console.log('backendDayOfWeek', backendDayOfWeek)
+    const filtered = data.filter(item => (
+        parseFloat(item.probability) !== 0 && parseInt(item.day_of_week, 10) === backendDayOfWeek
+    ));
+
+    setFilteredData(filtered);
+};
 
   const getColorBasedOnCondition = (item) => {
     // Your logic to determine color based on item properties
@@ -239,6 +257,47 @@ function FundDashboard() {
   ];
   // Define a function to format workflow data for Chrono
   console.log('Formatted Workflow Data:', formatWorkflowDataForChrono(filteredData));
+
+
+  const [optevtData, setOptevtData] = useState([]);
+  const [error, setError] = useState(null);
+
+useEffect(() => {
+  if (fundName.trim() !== '') {
+    fetchData();
+  }
+}, [fundName]); // Add fundName as a dependency to rerun the effect when fundName changes
+
+const fetchData = async () => {
+  try {
+    // Use the selected fundName from state
+    const apiUrl = `http://127.0.0.1:5000/api/getOptevtRules`;
+    const requestBody = {
+      fund: fundName, // Use the selected fundName from state
+      start_date: '10/01/2023', // Your start_date value
+      end_date: '12/12/2023', // Your end_date value
+    };
+    console.log('optevt fundName', fundName);
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log('OPTEVT', data);
+    setOptevtData(data.optevt);
+  } catch (error) {
+    setError(error.message);
+  }
+};
+
 
   return (
     <DashboardLayout>

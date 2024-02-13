@@ -104,7 +104,7 @@ function Tables() {
       </SoftBox>
 
       <OpnposTable selectedFund={fundName} />
-
+      {/* Options will be dynamically added using JavaScript 
       <SoftBox py={3}>
         <SoftBox mb={3}>
           <Card>
@@ -143,6 +143,7 @@ function Tables() {
           </SoftBox>
         </Card>
       </SoftBox>
+      */}
       <Footer />
     </DashboardLayout>
   );
