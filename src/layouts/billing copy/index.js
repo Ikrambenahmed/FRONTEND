@@ -42,6 +42,8 @@ import Transactions from "layouts/billing/components/Transactions";
 import Icon from "@mui/material/Icon";
 import Tooltip from "@mui/material/Tooltip";
 import borders from "assets/theme/base/borders";
+import ProtectedRoute from "ProtectedRoute"; // Adjust the path if needed
+import { useToken } from "TokenProvider";
 
 import { useEffect } from "react";
 import { useState } from "react";
@@ -103,7 +105,11 @@ function BillingPrices() {
   const [fundName, setFundName] = useState('');
   const [tickername, setTickerName] = useState('');
   const [tickersFetched, setTickersFetched] = useState(false);
+  const { token, setToken, clearToken } = useToken();
 
+  const userId = token?.userId;
+
+  //const token = localStorage.getItem('access_token');
 
   const [userData, setUserData] = useState({
     labels: UserData.map((data) => data.year),
@@ -135,10 +141,14 @@ function BillingPrices() {
     const requestData = {
       data: prices,
     };
+
+
     fetch('http://127.0.0.1:5000/api/getModel', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token.token}`
+
       },
       body: JSON.stringify(requestData),
     })
@@ -155,7 +165,22 @@ function BillingPrices() {
 
   useEffect(() => {
     // Fetch all funds and populate the dropdown
-    fetch('http://127.0.0.1:5000/api/getAllFunds')
+   // fetch('http://127.0.0.1:5000/api/getAllFunds', {
+     // headers: {
+       // 'Authorization': `Bearer ${token.token}`,
+      //  'Content-Type': 'application/json',
+     // },
+   // })
+   fetch('http://127.0.0.1:5000/api/getUsrFnd', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token.token}`,
+
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ USER_ID: userId }),
+  })
+
       .then(response => response.json())
       .then(data => {
         const dropdown = document.getElementById('fundDropdown');
@@ -183,7 +208,12 @@ function BillingPrices() {
   useEffect(() => {
     if (fundName.trim() !== '') {
       // Fetch tickers based on the selected fund
-      fetch(`http://127.0.0.1:5000/api/getOpnpos/${fundName}`)
+      fetch(`http://127.0.0.1:5000/api/getOpnpos/${fundName}`, {
+        headers: {
+          'Authorization': `Bearer ${token.token}`,
+          'Content-Type': 'application/json',
+        },
+      })
         .then(response => response.json())
         .then(data => {
           console.log('data from opnpos', data)
@@ -210,7 +240,12 @@ function BillingPrices() {
     useEffect(() => {
     if (fundName.trim() !== '' && tickername.trim() !== '') {
       // Fetch prices based on the selected fund and ticker
-      fetch(`http://127.0.0.1:5000/api/getAllPrices/${fundName}/${tickername}`)
+      fetch(`http://127.0.0.1:5000/api/getAllPrices/${fundName}/${tickername}`, {
+        headers: {
+          'Authorization': `Bearer ${token.token}`,
+          'Content-Type': 'application/json',
+        },
+      })
         .then(response => response.json())
         .then(data => {
           setPrices(data.data);
@@ -221,6 +256,7 @@ function BillingPrices() {
   }, [fundName, tickername]);
 
   return (
+    <ProtectedRoute>
     <DashboardLayout>
       <DashboardNavbar />
       <SoftBox mt={4}>
@@ -315,6 +351,7 @@ function BillingPrices() {
 </SoftBox>
       <Footer />
     </DashboardLayout>
+    </ProtectedRoute>
   );
 }
 

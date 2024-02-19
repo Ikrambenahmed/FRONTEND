@@ -34,16 +34,38 @@ import { useEffect } from "react";
 import { useState } from "react";
 import borders from "assets/theme/base/borders";
 import OpnposTable from "layouts/tables/data/OpnposTable" ; 
+import ProtectedRoute from "ProtectedRoute"; // Adjust the path if needed
+import { useToken } from "TokenProvider";
 
 function Tables() {
   const { columns, rows } = authorsTableData;
   const { columns: prCols, rows: prRows } = projectsTableData;
   const { borderWidth, borderColor } = borders;
   const [fundName, setFundName] = useState('');
+  //const token = localStorage.getItem('access_token');
+  const { token, setToken, clearToken } = useToken();
+
+  const userId = token?.userId;
 
   useEffect(() => {
     // Fetch all funds and populate the dropdown
-    fetch('http://127.0.0.1:5000/api/getAllFunds')
+//fetch('http://127.0.0.1:5000/api/getAllFunds', {
+//headers: {
+      //  'Authorization': `Bearer ${token.token}`,
+    //    'Content-Type': 'application/json',
+    //  },
+   // })
+
+    fetch('http://127.0.0.1:5000/api/getUsrFnd', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token.token}`,
+  
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ USER_ID: userId }),
+    })
+  
       .then(response => response.json())
       .then(data => {
         const dropdown = document.getElementById('fundDropdown');
@@ -67,6 +89,7 @@ function Tables() {
 
 
   return (
+    <ProtectedRoute> 
     <DashboardLayout>
       <DashboardNavbar />
       <SoftBox p={2}>
@@ -146,6 +169,7 @@ function Tables() {
       */}
       <Footer />
     </DashboardLayout>
+    </ProtectedRoute>
   );
 }
 

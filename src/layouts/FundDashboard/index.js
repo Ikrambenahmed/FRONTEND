@@ -51,17 +51,15 @@ import gradientLineChartData from "layouts/dashboard/data/gradientLineChartData"
 import borders from "assets/theme/base/borders";
 import masterCardLogo from "assets/images/logos/mastercard.png";
 import visaLogo from "assets/images/logos/visa.png";
-
 import Card from "@mui/material/Card";
-
 // Billing page components
 import Transaction from "layouts/billing/components/Transaction";
 import Table from "examples/Tables/Table";
 import SoftProgress from "components/SoftProgress";
-
 import { useEffect } from "react";
 import { useState } from "react";
-
+import ProtectedRoute from "ProtectedRoute"; // Adjust the path if needed
+import { useToken } from "TokenProvider";
 
 function Completion({ value, color }) {
   return (
@@ -77,11 +75,18 @@ function Completion({ value, color }) {
 }
 
 function FundDashboard() {
+
+  const [accessToken, setAccessToken] = useState(localStorage.getItem('access_token') || '');
+
   const { size } = typography;
   const { chart, items } = reportsBarChartData;
   const { borderWidth, borderColor } = borders;
   const [fundName, setFundName] = useState('');
   const [records, setRecords] = useState([]);
+  const { token, setToken, clearToken } = useToken();
+
+  const userId = token?.userId;
+
   const action = (
     <Icon sx={{ cursor: "pointer", fontWeight: "bold" }} fontSize="small">
       more_vert
@@ -90,7 +95,12 @@ function FundDashboard() {
 
   useEffect(() => {
     if (fundName.trim() !== '') {
-      fetch(`http://127.0.0.1:5000/api/getFndmas/${fundName}`)
+      fetch(`http://127.0.0.1:5000/api/getFndmas/${fundName}`, {
+        headers: {
+          'Authorization': `Bearer ${token.token}`,
+          'Content-Type': 'application/json',
+        },
+      })
         .then(response => response.json())
         .then(data => {
           setRecords(data.data)
@@ -102,8 +112,26 @@ function FundDashboard() {
 
 
   useEffect(() => {
+  console.log('token',token.token)
+    //const token = localStorage.getItem('access_token');
+
     // Fetch all funds and populate the dropdown
-    fetch('http://127.0.0.1:5000/api/getAllFunds')
+    // fetch('http://127.0.0.1:5000/api/getAllFunds', {
+      // headers: {
+        // 'Authorization': `Bearer ${token.token}`,
+        // 'Content-Type': 'application/json',
+      // },
+    // })
+    fetch('http://127.0.0.1:5000/api/getUsrFnd', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token.token}`,
+
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ USER_ID: userId }),
+    })
+  
       .then(response => response.json())
       .then(data => {
         const dropdown = document.getElementById('fundDropdown');
@@ -132,11 +160,18 @@ function FundDashboard() {
   };
 
   const [workflowData, setWorkflowData] = useState([]);
+
   const [filteredData, setFilteredData] = useState([]);
 
   useEffect(() => {
+
     if (fundName.trim() !== '') {
-      fetch(`http://127.0.0.1:5000/api/workflow/${fundName}`)
+      fetch(`http://127.0.0.1:5000/api/workflow/${fundName}`, {
+        headers: {
+          'Authorization': `Bearer ${token.token}`,
+          'Content-Type': 'application/json',
+        },
+      })
         .then(response => response.json())
         .then(data => {
           console.log('API Response:', data);
@@ -262,11 +297,11 @@ function FundDashboard() {
   const [optevtData, setOptevtData] = useState([]);
   const [error, setError] = useState(null);
 
-useEffect(() => {
-  if (fundName.trim() !== '') {
-    fetchData();
-  }
-}, [fundName]); // Add fundName as a dependency to rerun the effect when fundName changes
+  useEffect(() => {
+    if (fundName.trim() !== '') {
+      fetchData();
+    }
+  }, [fundName, accessToken]); // Add accessToken as a dependency
 
 const fetchData = async () => {
   try {
@@ -282,6 +317,8 @@ const fetchData = async () => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token.token}`, 
+
       },
       body: JSON.stringify(requestBody),
     });
@@ -300,6 +337,7 @@ const fetchData = async () => {
 
 
   return (
+    <ProtectedRoute>
     <DashboardLayout>
       <DashboardNavbar />
       <SoftBox p={2}>
@@ -391,9 +429,6 @@ const fetchData = async () => {
 
       <SoftBox>
 
-
-
-
         <Card sx={{ height: "100%" }}>
           <SoftBox display="flex" justifyContent="space-between" alignItems="center" pt={3} px={2}>
             <SoftTypography variant="h6" fontWeight="medium" textTransform="capitalize">
@@ -453,6 +488,7 @@ const fetchData = async () => {
 
       <Footer />
     </DashboardLayout>
+    </ProtectedRoute>
 
 
   );

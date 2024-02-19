@@ -33,9 +33,12 @@ import PaymentMethod from "layouts/billing/components/PaymentMethod";
 import Invoices from "layouts/billing/components/Invoices";
 import BillingInformation from "layouts/billing/components/BillingInformation";
 import Transactions from "layouts/billing/components/Transactions";
+import ProtectedRoute from "ProtectedRoute"; // Adjust the path if needed
 
 function Billing() {
   return (
+    <ProtectedRoute>
+
     <DashboardLayout>
       <DashboardNavbar />
       <SoftBox mt={4}>
@@ -85,6 +88,8 @@ function Billing() {
       </SoftBox>
       <Footer />
     </DashboardLayout>
+    </ProtectedRoute>
+
   );
 }
 

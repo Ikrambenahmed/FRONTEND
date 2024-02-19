@@ -30,6 +30,7 @@ const OpnposTable = ({ selectedFund }) => {
     const [opnposData, setOpnposData] = useState([]);
     const [selectedRow, setSelectedRow] = useState(null); // Add state to track the selected row
     const [priceHistory, setPriceHistory] = useState([]);
+    const token = localStorage.getItem('access_token');
 
     // Fetch Opnpos data from the API based on the selected fund
     useEffect(() => {
@@ -172,13 +173,23 @@ const OpnposTable = ({ selectedFund }) => {
         try {
           const qtyResponse = await fetch(
             `http://127.0.0.1:5000/api/getQty/${selectedFund}/${selectedTicker}`
-          );
+            , {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+              },
+            });
           const qtyDataText = await qtyResponse.text();
           const qtyData = JSON.parse(qtyDataText);
   
           const priceResponse = await fetch(
-            `http://127.0.0.1:5000/api/getCash/${selectedFund}/${selectedTicker}`
-          );
+            `http://127.0.0.1:5000/api/getCash/${selectedFund}/${selectedTicker}`, {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+              },
+            })
+          ;
           const priceDataText = await priceResponse.text();
           const priceData = JSON.parse(priceDataText);
   

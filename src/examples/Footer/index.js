@@ -67,9 +67,9 @@ function Footer({ company, links }) {
 }
 
 Footer.defaultProps = {
-  company: { href: "https://www.linedata.com/", name: "About Linedata" },
+  company: { href: "https://www.linedata.com/", name: "About" },
   links: [
-    { href: "https://www.linedata.com/", name: "About Linedata" },
+    { href: "https://www.linedata.com/", name: "Linedata" },
     // Add other links as needed
   ],
 };
