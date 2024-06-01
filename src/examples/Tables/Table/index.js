@@ -45,7 +45,7 @@ function Table({ columns, rows }) {
   const renderColumns = columns.map(({ name, align, width }, key) => {
     let pl;
     let pr;
-
+  
     if (key === 0) {
       pl = 3;
       pr = 3;
@@ -56,7 +56,7 @@ function Table({ columns, rows }) {
       pl = 1;
       pr = 1;
     }
-
+  
     return (
       <SoftBox
         key={name}
@@ -72,18 +72,19 @@ function Table({ columns, rows }) {
         color="secondary"
         opacity={0.7}
         borderBottom={`${borderWidth[1]} solid ${light.main}`}
+        sx={{ textAlign: "center" }} // Center align the content of table header cells
       >
         {name.toUpperCase()}
       </SoftBox>
     );
   });
-
+  
   const renderRows = rows.map((row, key) => {
     const rowKey = `row-${key}`;
-
+  
     const tableRow = columns.map(({ name, align }) => {
       let template;
-
+  
       if (Array.isArray(row[name])) {
         template = (
           <SoftBox
@@ -91,6 +92,7 @@ function Table({ columns, rows }) {
             component="td"
             p={1}
             borderBottom={row.hasBorder ? `${borderWidth[1]} solid ${light.main}` : null}
+            sx={{ textAlign: "center" }} // Center align the content of table data cells
           >
             <SoftBox display="flex" alignItems="center" py={0.5} px={1}>
               <SoftBox mr={2}>
@@ -110,6 +112,7 @@ function Table({ columns, rows }) {
             p={1}
             textAlign={align}
             borderBottom={row.hasBorder ? `${borderWidth[1]} solid ${light.main}` : null}
+            sx={{ textAlign: "center" }} // Center align the content of table data cells
           >
             <SoftTypography
               variant="button"
@@ -122,12 +125,13 @@ function Table({ columns, rows }) {
           </SoftBox>
         );
       }
-
+  
       return template;
     });
-
+  
     return <TableRow key={rowKey}>{tableRow}</TableRow>;
   });
+  
 
   return useMemo(
     () => (

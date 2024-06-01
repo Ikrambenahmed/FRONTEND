@@ -195,7 +195,7 @@ class StocksGraph extends React.Component {
         return (
           <div className={'card column'}>
             <div className='card-header'>
-              <div className='card-header-title'>Graph</div>
+              <div className='card-header-title'></div>
             </div>
             <div className='card-content'>
               <Card border={`${borderWidth[12]} solid ${borderColor}`} borderRadius="lg">

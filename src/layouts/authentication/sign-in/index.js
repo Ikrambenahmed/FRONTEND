@@ -166,7 +166,7 @@ function SignIn() {
 
  return (
   <>
-    <CoverLayout title="Welcome" description="Enter your username and password to sign in" image={image}>
+    <CoverLayout title="Welcome" description="Enter your Mfact username and password " image={image}>
       <SoftBox component="form" role="form">
         <SoftBox mb={2}>
           <SoftBox mb={1} ml={0.5}>
@@ -197,21 +197,7 @@ function SignIn() {
             </SoftBox>
           )}
         </SoftBox>
-        <SoftBox mt={3} textAlign="center">
-          <SoftTypography variant="button" color="text" fontWeight="regular">
-            Didn&apos;t set your database yet ?{" "}
-            <SoftTypography
-              component="button"
-              variant="button"
-              color="info"
-              fontWeight="medium"
-              textGradient
-              onClick={handleSettingsClick} // Open the modal on click
-            >
-              Go to Settings
-            </SoftTypography>
-          </SoftTypography>
-        </SoftBox>
+      
       </SoftBox>
     </CoverLayout>
     <SettingsModal

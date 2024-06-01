@@ -12,6 +12,7 @@ Coded by www.creative-tim.com
 
 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 */
+
 import { Line } from 'react-chartjs-2';
 import 'chartjs-plugin-zoom'; // Import the chartjs-plugin-zoom
 
@@ -40,6 +41,7 @@ import WorkWithTheRockets from "layouts/dashboard/components/WorkWithTheRockets"
 import Projects from "layouts/dashboard/components/Projects";
 import OrderOverview from "layouts/dashboard/components/OrderOverview";
 import { useToken } from "TokenProvider";
+import Spinner from "components/Spinner/Spinner";
 
 // Data
 import reportsBarChartData from "layouts/dashboard/data/reportsBarChartData";
@@ -49,6 +51,8 @@ import { useEffect } from "react";
 import { useState } from "react";
 
 function Dashboard() {
+  const [isLoading, setIsLoading] = useState(true);
+
   const { size } = typography;
   const { chart, items } = reportsBarChartData;
   const { token, setToken, clearToken } = useToken();
@@ -60,7 +64,7 @@ function Dashboard() {
   const [lineChartData, setLineChartData] = useState({});
   const [chartData, setChartData] = useState({});
   const [ChartDataPrices, setChartDataPrices] = useState({});
-  
+
   const [PriceChange, setPriceChange] = useState({});
 
   const [itemsData, setItemsData] = useState([]);
@@ -82,9 +86,28 @@ function Dashboard() {
       }
 
       const data = await response.json();
-      setTotalAssets(data.total_assets);
-      setTotalLiabilities(data.total_liabilities);
-      setTotalNav(data.total_nav);
+      // Format the values
+      const formattedTotalAssets = new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+      }).format(data.total_assets);
+
+      const formattedTotalLiabilities = new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+      }).format(data.total_liabilities);
+
+      const formattedTotalNav = new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+      }).format(data.total_nav);
+
+      setTotalAssets(formattedTotalAssets);
+      setTotalLiabilities(formattedTotalLiabilities);
+      setTotalNav(formattedTotalNav);
+
+
+
 
     } catch (error) {
       setFetchError(error.message);
@@ -179,6 +202,9 @@ function Dashboard() {
   useEffect(() => {
     const fetchDataFromAPIPrices = async () => {
       try {
+        setIsLoading(true);
+        // Set loading state to true before fetching data
+
         const apiUrl = 'http://127.0.0.1:5000/api/highestPriceChange';
         const response = await fetch(apiUrl);
 
@@ -191,35 +217,38 @@ function Dashboard() {
 
         const chartLabels = data.prihstdata_list.map(entry => entry.prcdate);
         console.log('chartLabels', chartLabels);
-        
+
         const chartDataValues = data.prihstdata_list.slice(0, 9).map(entry => entry.price);
         console.log('chartDataValues', chartDataValues);
-        const priceChange =data.highest_change
+        const priceChange = data.highest_change
         const chart = {
           labels: chartLabels,
           datasets: [
             {
               label: data.highest_change_ticker,
               data: chartDataValues,
-              color:"info"
+              color: "info"
               // Other properties if needed
             }
           ],
         };
         console.log('chart', chart);
-        setPriceChange(priceChange) ; 
+        setPriceChange(priceChange);
         setChartDataPrices(chart);
 
-        
 
+
+        setIsLoading(false); // Set loading state to false after fetching data
 
       } catch (error) {
         console.error('Error fetching data from API:', error.message);
+        setIsLoading(false); // Set loading state to false if there's an error
+
       }
     };
 
     fetchDataFromAPIPrices();
-  }, []);
+  }, [isLoading ]);
 
 
 
@@ -269,36 +298,26 @@ function Dashboard() {
           <SoftBox mb={3}>
             <Grid container spacing={3}>
               <Grid item xs={12} lg={5}>
-               
+
                 <ReportsBarChart title="Most traded ticker types" description={
                   <>
                     <strong>Count of open positions for each ticker type</strong>
                   </>
                 } chart={chartData} items={itemsData} />
-
               </Grid>
-
-
               <Grid item xs={12} lg={7}>
 
               <GradientLineChart
-                title="Prices Overview"
-                description={
-                  <SoftBox display="flex" alignItems="center">
-                    <SoftBox fontSize={size.lg} color="success" mb={0.3} mr={0.5} lineHeight={0}>
-                      <Icon className="font-bold">arrow_upward</Icon>
-                    </SoftBox>
-                    <SoftTypography variant="button" color="text" fontWeight="medium">
-                   more{" "}
-                      <SoftTypography variant="button" color="text" fontWeight="regular">
-                        in 2024
-                      </SoftTypography>
-                    </SoftTypography>
-                  </SoftBox>
-                }
-                height="20.25rem"
-                chart={ChartDataPrices} 
-              />
+          title="Prices Overview"
+          description={
+            <SoftBox display="flex" alignItems="center">
+              {/* Description */}
+            </SoftBox>
+          }
+          height="20.25rem"
+          chart={ChartDataPrices}
+          loading={isLoading} // Pass loading state to GradientLineChart
+        />
 
               </Grid>
 

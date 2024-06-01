@@ -92,7 +92,8 @@ function Tables() {
     <ProtectedRoute> 
     <DashboardLayout>
       <DashboardNavbar />
-      <SoftBox p={2}>
+
+      <SoftBox >
         <Grid container spacing={3}>
           <Grid item xs={12} md={12}>
             <SoftBox
@@ -104,7 +105,7 @@ function Tables() {
               p={3}
             >
               {/* Dropdown for funds */}
-              <label htmlFor="fundDropdown" style={{ marginRight: '10px' }}>Select a Fund:</label>
+              <label htmlFor="fundDropdown" style={{ marginRight: '10px' }}>Select a Fund</label>
               <select
                 id="fundDropdown"
                 onChange={(e) => setFundName(e.target.value)}
@@ -114,7 +115,7 @@ function Tables() {
                   fontSize: '16px',
                   borderRadius: '5px',
                   border: `1px solid ${borderColor}`,
-                  width: '200px', // Adjust the width as needed
+                  width: '400px', // Adjust the width as needed
                 }}
               >
                 {/* Options will be dynamically added using JavaScript */}
@@ -127,47 +128,9 @@ function Tables() {
       </SoftBox>
 
       <OpnposTable selectedFund={fundName} />
-      {/* Options will be dynamically added using JavaScript 
-      <SoftBox py={3}>
-        <SoftBox mb={3}>
-          <Card>
-            <SoftBox display="flex" justifyContent="space-between" alignItems="center" p={3}>
-              <SoftTypography variant="h6">table Positions</SoftTypography>
-            </SoftBox>
-            <SoftBox
-              sx={{
-                "& .MuiTableRow-root:not(:last-child)": {
-                  "& td": {
-                    borderBottom: ({ borders: { borderWidth, borderColor } }) =>
-                      `${borderWidth[1]} solid ${borderColor}`,
-                  },
-                },
-              }}
-            >
-              <Table columns={columns} rows={rows} />
-            </SoftBox>
-          </Card>
-        </SoftBox>
-        <Card>
-          <SoftBox display="flex" justifyContent="space-between" alignItems="center" p={3}>
-            <SoftTypography variant="h6">Projects table</SoftTypography>
-          </SoftBox>
-          <SoftBox
-            sx={{
-              "& .MuiTableRow-root:not(:last-child)": {
-                "& td": {
-                  borderBottom: ({ borders: { borderWidth, borderColor } }) =>
-                    `${borderWidth[1]} solid ${borderColor}`,
-                },
-              },
-            }}
-          >
-            <Table columns={prCols} rows={prRows} />
-          </SoftBox>
-        </Card>
-      </SoftBox>
-      */}
+     
       <Footer />
+      
     </DashboardLayout>
     </ProtectedRoute>
   );

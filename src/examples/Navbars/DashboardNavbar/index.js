@@ -7,6 +7,7 @@ import { useLocation, Link } from "react-router-dom";
 
 // prop-types is a library for typechecking of props.
 import PropTypes from "prop-types";
+import Typography from "@mui/material/Typography";
 
 // @material-ui core components
 import AppBar from "@mui/material/AppBar";
@@ -144,7 +145,7 @@ function DashboardNavbar({ absolute, light, isMini }) {
     >
       <NotificationItem
         image={<img src={team2} alt="person" />}
-        title={[`User ${userId}`, "Log out"]}
+        title={["Log out"]}
         date={formattedDate}
         onClick={handleLogout}
       />
@@ -187,9 +188,12 @@ function DashboardNavbar({ absolute, light, isMini }) {
                 aria-haspopup="true"
                 variant="contained"
                 onClick={handleOpenMenu}>
-                <Icon className={light ? "text-white" : "text-dark"}>account_circle</Icon>
-              </IconButton>
-              {renderMenu()}
+    <Icon className={light ? "text-white" : "text-dark"}>account_circle </Icon>
+    <Typography variant="body2" sx={{ marginLeft: 1 }}>
+      {userId}
+    </Typography>
+              </IconButton> 
+              {renderMenu()} 
             </SoftBox>
           </SoftBox>
         )}

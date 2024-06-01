@@ -19,6 +19,7 @@ import Button from "@mui/material/Button";
 // @mui material components
 import Grid from "@mui/material/Grid";
 import 'chartjs-adapter-date-fns'; // Import the date adapter
+import SPLoader from "components/Spinner/Spinner"; // Adjust the path if needed
 
 // Soft UI Dashboard React components
 import SoftBox from "components/SoftBox";
@@ -44,6 +45,7 @@ import Tooltip from "@mui/material/Tooltip";
 import borders from "assets/theme/base/borders";
 import ProtectedRoute from "ProtectedRoute"; // Adjust the path if needed
 import { useToken } from "TokenProvider";
+import Spinner from "components/Spinner/Spinner";
 
 import { useEffect } from "react";
 import { useState } from "react";
@@ -99,6 +101,8 @@ export const UserData = [
 ];
 
 function BillingPrices() {
+  const [isLoading, setIsLoading] = useState(true);
+  const [isPredicting, setIsPredicting] = useState(false);
 
   const [prices, setPrices] = useState([]);
   const { borderWidth, borderColor } = borders;
@@ -136,41 +140,82 @@ function BillingPrices() {
       console.error('No prices available to create the model.');
       return;
     }
+    console.log(prices)  ; 
 
-    // Prepare data for the API call
+    console.error('tickername',tickername);
+
     const requestData = {
       data: prices,
     };
 
+ 
+    setIsPredicting(true);
 
-    fetch('http://127.0.0.1:5000/api/getModel', {
+
+    
+
+    fetch(`http://127.0.0.1:5000/api/CreateUse/${tickername}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token.token}`
 
       },
-      body: JSON.stringify(requestData),
+      body: JSON.stringify(prices), // Directly send the prices array
     })
       .then(response => response.json())
-      .then(data => {
-        console.log('API response:', data);
-        // Handle the response as needed
+      .then(predictedData => {
+        console.log('API response:', predictedData);
+              // Get the last date from the existing prices
+      const lastDateStr = prices[prices.length - 1].prcdate;
+      if (!lastDateStr) {
+        console.error('Last date is undefined');
+        return;
+      }
+      
+      const lastDate = new Date(lastDateStr);
+      if (isNaN(lastDate.getTime())) {
+        console.error('Invalid date format in existing prices:', lastDateStr);
+        return;
+      }
+
+      console.log('Last valid date:', lastDate.toISOString());
+
+        const datedPredictedPrices = predictedData.map((predictedPrice, index) => {
+          const newDate = new Date(lastDate);
+          newDate.setDate(newDate.getDate() + index + 1);
+          return {
+            fund: 'ABFORT', // Assuming this is constant for all predicted prices
+            prcdate: newDate.toUTCString(), // Format date as "Day, DD Mon YYYY HH:MM:SS GMT"
+            price: predictedPrice[0], // Assuming the price is always at index 0
+            source: '26', // Assuming this is constant for all predicted prices
+            tkr: 'AAPL' // Assuming this is constant for all predicted prices
+          };
+        });
+        
+
+        console.log('Dated predicted prices:', datedPredictedPrices);
+
+        const combinedPrices = [...prices, ...datedPredictedPrices];
+        console.log('prices',prices)
+        console.log('datedPredictedPrices',datedPredictedPrices)
+        console.log('combinedPrices',combinedPrices)
+        setPrices(combinedPrices);
       })
       .catch(error => {
         console.error('Error calling API:', error);
-        // Handle the error as needed
+      })
+      .finally(() => {
+        setIsPredicting(false);
       });
-  };
+    };
+  
+
 
   useEffect(() => {
-    // Fetch all funds and populate the dropdown
-   // fetch('http://127.0.0.1:5000/api/getAllFunds', {
-     // headers: {
-       // 'Authorization': `Bearer ${token.token}`,
-      //  'Content-Type': 'application/json',
-     // },
-   // })
+    
+   setIsLoading(true);
+
    fetch('http://127.0.0.1:5000/api/getUsrFnd', {
     method: 'POST',
     headers: {
@@ -183,6 +228,8 @@ function BillingPrices() {
 
       .then(response => response.json())
       .then(data => {
+        setIsLoading(false);
+
         const dropdown = document.getElementById('fundDropdown');
   
         // Clear previous options
@@ -202,6 +249,7 @@ function BillingPrices() {
           dropdown.add(option);
         });
       })
+
       .catch(error => console.error('Error fetching funds:', error));
   }, []);
 
@@ -214,9 +262,10 @@ function BillingPrices() {
           'Content-Type': 'application/json',
         },
       })
-        .then(response => response.json())
+        .then(response => response.json()
+        )
         .then(data => {
-          console.log('data from opnpos', data)
+          console.log('tickers selected test', data.fund_data)
           const dropdown = document.getElementById('tickerDropdown');
           dropdown.innerHTML = '';
   
@@ -228,15 +277,19 @@ function BillingPrices() {
   
           // Add each ticker as an option in the dropdown
           data.fund_data.forEach(ticker => {
-            const option = document.createElement('option');
-            option.value = ticker.tkr;
-            option.text = ticker.tkr;
-            dropdown.add(option);
+            if (ticker.tkr_type === '1') {
+              const option = document.createElement('option');
+              option.value = ticker.tkr;
+              option.text = ticker.tkr;
+              dropdown.add(option);
+          }
+      
           });
         })
         .catch(error => console.error('Error fetching tickers:', error));
     }
   }, [fundName]);
+
     useEffect(() => {
     if (fundName.trim() !== '' && tickername.trim() !== '') {
       // Fetch prices based on the selected fund and ticker
@@ -254,105 +307,91 @@ function BillingPrices() {
         .catch(error => console.error('Error fetching prices:', error));
     }
   }, [fundName, tickername]);
-
   return (
     <ProtectedRoute>
-    <DashboardLayout>
-      <DashboardNavbar />
-      <SoftBox mt={4}>
-        <SoftBox my={3}>
-          <Grid container spacing={3}>
-            <Grid item xs={12} md={5}>
-              <SoftBox
-                border={`${borderWidth[1]} solid ${borderColor}`}
-                borderRadius="lg"
-                display="flex"
-                justifyContent="space-between"
-                alignItems="center"
-                p={3}
-              >
-                {/* Dropdown for funds */}
-                <label htmlFor="fundDropdown" style={{ marginRight: '10px' }}>Select a Fund:</label>
-                <select
-                  id="fundDropdown"
-                  onChange={(e) => setFundName(e.target.value)}
-                  value={fundName}
-                  style={{
-                    padding: '10px',
-                    fontSize: '16px',
-                    borderRadius: '5px',
-                    border: `1px solid ${borderColor}`,
-                    width: '200px', // Adjust the width as needed
-                  }}
+      <DashboardLayout>
+        <DashboardNavbar />
+        <SoftBox mt={4}>
+          <SoftBox my={3}>
+            <Grid container spacing={3}>
+              <Grid item xs={12} md={5}>
+                <SoftBox
+                  border={`${borderWidth[1]} solid ${borderColor}`}
+                  borderRadius="lg"
+                  display="flex"
+                  justifyContent="space-between"
+                  alignItems="center"
+                  p={3}
                 >
-                  {/* Options will be dynamically added using JavaScript */}
-                </select>
-
-                {/* SoftInput for fund ID search */}
-              </SoftBox>
-            </Grid>
-            <Grid item xs={12} md={5}>
-              <SoftBox
-                border={`${borderWidth[1]} solid ${borderColor}`}
-                borderRadius="lg"
-                display="flex"
-                justifyContent="space-between"
-                alignItems="center"
-                p={3}
-              >
-                {/* Dropdown for funds */}
-                <label htmlFor="tickerDropdown" style={{ marginRight: '10px' }}>Select a Ticker:</label>
-                <select
-                  id="tickerDropdown"
-                  onChange={(e) => setTickerName(e.target.value)}
-                  value={tickername}
-                  style={{
-                    padding: '10px',
-                    fontSize: '16px',
-                    borderRadius: '5px',
-                    border: `1px solid ${borderColor}`,
-                    width: '200px', // Adjust the width as needed
-                  }}
+                  <label htmlFor="fundDropdown" style={{ marginRight: '10px' }}>Select a Fund</label>
+                  <select
+                    id="fundDropdown"
+                    onChange={(e) => setFundName(e.target.value)}
+                    value={fundName}
+                    style={{
+                      padding: '10px',
+                      fontSize: '16px',
+                      borderRadius: '5px',
+                      border: `1px solid ${borderColor}`,
+                      width: '200px',
+                    }}
+                  ></select>
+                </SoftBox>
+              </Grid>
+              <Grid item xs={12} md={5}>
+                <SoftBox
+                  border={`${borderWidth[1]} solid ${borderColor}`}
+                  borderRadius="lg"
+                  display="flex"
+                  justifyContent="space-between"
+                  alignItems="center"
+                  p={3}
                 >
-                  {/* Options will be dynamically added using JavaScript */}
-                </select>
-
-                {/* SoftInput for fund ID search */}
-              </SoftBox>
-
+                  <label htmlFor="tickerDropdown" style={{ marginRight: '10px' }}>Select a Ticker</label>
+                  <select
+                    id="tickerDropdown"
+                    onChange={(e) => setTickerName(e.target.value)}
+                    value={tickername}
+                    style={{
+                      padding: '10px',
+                      fontSize: '16px',
+                      borderRadius: '5px',
+                      border: `1px solid ${borderColor}`,
+                      width: '200px',
+                    }}
+                  ></select>
+                </SoftBox>
+              </Grid>
+              {fundName.trim() !== '' && tickername.trim() !== '' && (
+                <Grid item xs={12} md={2} container justifyContent="center" alignItems="center">
+                  <SoftBox>
+                    <SoftButton variant="contained" color="primary" onClick={handleCreateModel}>
+                      Predict Prices
+                    </SoftButton>
+                  </SoftBox>
+                </Grid>
+              )}
             </Grid>
-          </Grid>
-        </SoftBox>
-        <Grid item xs={12} lg={7}>
-
-        {fundName.trim() !== '' && tickername.trim() !== '' && (
-          <SoftBox >
-            <StocksGraph prices={prices} />
           </SoftBox>
-        )}
-        </Grid>
-      </SoftBox>
-      <SoftBox mt={4}>
-        Next day Price Prediction for ticker {tickername}
-        <SoftBox my={3}>
-          <Grid container spacing={3}>
-            <Grid item xs={12} md={5}>
-              <SoftBox>
-              <SoftButton variant="contained" color="primary" onClick={handleCreateModel}>
-            Create Model
-          </SoftButton>
-              </SoftBox>
-              </Grid>
-              </Grid>
-
-
-          
+          {(fundName.trim() !== '' && tickername.trim() !== '') && (
+            <SoftBox position="relative" height="500px">
+              {isPredicting ? (
+                <SPLoader />
+              ) : prices.length > 0 ? (
+                <StocksGraph prices={prices} />
+              ) : (
+<p style={{ color: "red" }}><strong>No prices are found for the selected fund and ticker.</strong></p>
+              )}
+            </SoftBox>
+          )}
         </SoftBox>
-</SoftBox>
-      <Footer />
-    </DashboardLayout>
+        <Footer />
+      </DashboardLayout>
     </ProtectedRoute>
   );
 }
 
 export default BillingPrices;
+
+
+

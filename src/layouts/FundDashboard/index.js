@@ -53,13 +53,14 @@ import masterCardLogo from "assets/images/logos/mastercard.png";
 import visaLogo from "assets/images/logos/visa.png";
 import Card from "@mui/material/Card";
 // Billing page components
-import Transaction from "layouts/billing/components/Transaction";
-import Table from "examples/Tables/Table";
 import SoftProgress from "components/SoftProgress";
 import { useEffect } from "react";
 import { useState } from "react";
 import ProtectedRoute from "ProtectedRoute"; // Adjust the path if needed
 import { useToken } from "TokenProvider";
+import Spinner from "components/Spinner/Spinner"; // Import the Spinner component
+
+// Inside the FundDashboard component
 
 function Completion({ value, color }) {
   return (
@@ -75,6 +76,7 @@ function Completion({ value, color }) {
 }
 
 function FundDashboard() {
+  const [isLoading, setIsLoading] = useState(false); // Add isLoading state variable
 
   const [accessToken, setAccessToken] = useState(localStorage.getItem('access_token') || '');
 
@@ -112,15 +114,15 @@ function FundDashboard() {
 
 
   useEffect(() => {
-  console.log('token',token.token)
+    console.log('token', token.token)
     //const token = localStorage.getItem('access_token');
 
     // Fetch all funds and populate the dropdown
     // fetch('http://127.0.0.1:5000/api/getAllFunds', {
-      // headers: {
-        // 'Authorization': `Bearer ${token.token}`,
-        // 'Content-Type': 'application/json',
-      // },
+    // headers: {
+    // 'Authorization': `Bearer ${token.token}`,
+    // 'Content-Type': 'application/json',
+    // },
     // })
     fetch('http://127.0.0.1:5000/api/getUsrFnd', {
       method: 'POST',
@@ -131,7 +133,7 @@ function FundDashboard() {
       },
       body: JSON.stringify({ USER_ID: userId }),
     })
-  
+
       .then(response => response.json())
       .then(data => {
         const dropdown = document.getElementById('fundDropdown');
@@ -152,7 +154,7 @@ function FundDashboard() {
       })
       .catch(error => console.error('Error fetching funds:', error));
   }, []);
-  
+
   const getCurrentDate = () => {
     const currentDate = new Date();
     const options = { year: 'numeric', month: 'long', day: 'numeric' };
@@ -164,8 +166,8 @@ function FundDashboard() {
   const [filteredData, setFilteredData] = useState([]);
 
   useEffect(() => {
-
     if (fundName.trim() !== '') {
+      setIsLoading(true); // Set isLoading to true when data fetching starts
       fetch(`http://127.0.0.1:5000/api/workflow/${fundName}`, {
         headers: {
           'Authorization': `Bearer ${token.token}`,
@@ -177,32 +179,13 @@ function FundDashboard() {
           console.log('API Response:', data);
           setWorkflowData(data.fund_data);
           filterDataByWeekday(data.fund_data);
+          setIsLoading(false); // Set isLoading to false when data fetching is completed
           console.log('filtered inside workflow', filteredData);
         })
         .catch(err => console.log(err));
     }
   }, [fundName]);
-  
-  const OLDfilterDataByWeekday = (data) => {
-    const currentDate = new Date();
-    // Get the current weekday (0 for Sunday, 1 for Monday, ..., 6 for Saturday)
-    const currentWeekday = currentDate.getDay();
 
-    console.log('currentWeekday now', currentWeekday);
-
-    // const backendDayOfWeek = currentWeekday === 0 ? 7 : currentWeekday + 1; // Adjust Sunday to 7
-    const backendDayOfWeek = currentWeekday === 0 ? 7 : currentWeekday;
-
-    console.log('backendDayOfWeek', backendDayOfWeek)
-    
-    const filtered = data.filter(item => (
-      parseFloat(item.probability) !== 0 && parseInt(item.day_of_week, 10) === backendDayOfWeek
-      // item.day_of_week === currentWeekday
-    ));
-
-    setFilteredData(filtered);
-
-  };
 
   const filterDataByWeekday = (data) => {
     const currentDate = new Date();
@@ -215,11 +198,11 @@ function FundDashboard() {
 
     console.log('backendDayOfWeek', backendDayOfWeek)
     const filtered = data.filter(item => (
-        parseFloat(item.probability) !== 0 && parseInt(item.day_of_week, 10) === backendDayOfWeek
+      parseFloat(item.probability) !== 0 && parseInt(item.day_of_week, 10) === backendDayOfWeek
     ));
 
     setFilteredData(filtered);
-};
+  };
 
   const getColorBasedOnCondition = (item) => {
     // Your logic to determine color based on item properties
@@ -303,191 +286,206 @@ function FundDashboard() {
     }
   }, [fundName, accessToken]); // Add accessToken as a dependency
 
-const fetchData = async () => {
-  try {
-    // Use the selected fundName from state
-    const apiUrl = `http://127.0.0.1:5000/api/getOptevtRules`;
-    const requestBody = {
-      fund: fundName, // Use the selected fundName from state
-      start_date: '10/01/2023', // Your start_date value
-      end_date: '12/12/2023', // Your end_date value
-    };
-    console.log('optevt fundName', fundName);
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token.token}`, 
 
-      },
-      body: JSON.stringify(requestBody),
-    });
+  const formatCurrency = (value) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+    }).format(value);
+  };
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`);
+
+  const fetchData = async () => {
+    try {
+      // Use the selected fundName from state
+      const apiUrl = `http://127.0.0.1:5000/api/getOptevtRules`;
+      const requestBody = {
+        fund: fundName, // Use the selected fundName from state
+        start_date: '10/01/2023', // Your start_date value
+        end_date: '12/12/2023', // Your end_date value
+      };
+      console.log('optevt fundName', fundName);
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token.token}`,
+
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('OPTEVT', data);
+      setOptevtData(data.optevt);
+    } catch (error) {
+      setError(error.message);
     }
-
-    const data = await response.json();
-    console.log('OPTEVT', data);
-    setOptevtData(data.optevt);
-  } catch (error) {
-    setError(error.message);
-  }
-};
+  };
 
 
   return (
     <ProtectedRoute>
-    <DashboardLayout>
-      <DashboardNavbar />
-      <SoftBox p={2}>
-        <Grid container spacing={3}>
-          <Grid item xs={12} md={12}>
-            <SoftBox
-              border={`${borderWidth[1]} solid ${borderColor}`}
-              borderRadius="lg"
-              display="flex"
-              justifyContent="space-between"
-              alignItems="center"
-              p={3}
-            >
-              {/* Dropdown for funds */}
-              <label htmlFor="fundDropdown" style={{ marginRight: '10px' }}>Select a Fund:</label>
-              <select
-                id="fundDropdown"
-                onChange={(e) => setFundName(e.target.value)}
-                value={fundName}
-                style={{
-                  padding: '10px',
-                  fontSize: '16px',
-                  borderRadius: '5px',
-                  border: `1px solid ${borderColor}`,
-                  width: '200px', // Adjust the width as needed
+      <DashboardLayout>
+        <DashboardNavbar />
+        <SoftBox >
+          <Grid container spacing={3}>
+            <Grid item xs={12} md={12}>
+              <SoftBox
+                border={`${borderWidth[1]} solid ${borderColor}`}
+                borderRadius="lg"
+                display="flex"
+                justifyContent="space-between"
+                alignItems="center"
+                p={3}
+              >
+                {/* Dropdown for funds */}
+                <label htmlFor="fundDropdown" style={{ marginRight: '10px' }}>Select a Fund</label>
+                <select
+                  id="fundDropdown"
+                  onChange={(e) => setFundName(e.target.value)}
+                  value={fundName}
+                  style={{
+                    padding: '10px',
+                    fontSize: '16px',
+                    borderRadius: '5px',
+                    border: `1px solid ${borderColor}`,
+                    width: '400px', // Adjust the width as needed
+                  }}
+                >
+                  {/* Options will be dynamically added using JavaScript */}
+                </select>
+
+                {/* SoftInput for fund ID search */}
+              </SoftBox>
+            </Grid>
+          </Grid>
+        </SoftBox>
+
+
+        <SoftBox py={3}>
+        
+        {fundName && (
+          <SoftBox mb={3}>
+
+            <Grid container spacing={3}>
+
+              <Grid item xs={12} sm={6} xl={3}>
+                <MiniStatisticsCard
+                  title={{ text: "Accountant" }}
+                  count={records.FNDMAS ? records.FNDMAS.ACCOUNTANT : ""}
+                  icon={{ color: "info", component: "public" }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6} xl={3}>
+                <MiniStatisticsCard
+                  title={{ text: "Latest Nav" }}
+                  count={records.FNDMAS ? formatCurrency(records.LatestNAVHST.NET_VALUE) : ""}
+                  percentage={{
+                    color: records.percentage_change < 0 ? "danger" : "success",
+                    text: records.FNDMAS ? `${records.percentage_change}%` : "",
+                  }}
+                  icon={{ color: "info", component: "paid" }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6} xl={3}>
+                <MiniStatisticsCard
+                  title={{ text: "Assets" }}
+                  count={records.FNDMAS ? formatCurrency(records.LatestNAVHST.ASSETS) : ""}
+                  percentage={{
+                    color: records.assets_percentage_change < 0 ? "danger" : "success",
+                    text: records.FNDMAS ? `${records.assets_percentage_change}%` : "",
+                  }}
+                  icon={{ color: "info", component: "emoji_events" }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6} xl={3}>
+                <MiniStatisticsCard
+                  title={{ text: "Liabilities" }}
+                  count={records.FNDMAS ? formatCurrency(records.LatestNAVHST.LIABILITY) : ""}
+                  percentage={{
+                    color: records.liabilities_percentage_change < 0 ? "danger" : "success",
+                    text: records.FNDMAS ? `${records.liabilities_percentage_change}%` : "",
+                  }}
+                  icon={{ color: "info", component: "shopping_cart" }}
+                />
+              </Grid>
+            </Grid>
+          </SoftBox>
+          )}
+        </SoftBox>
+
+
+
+        <SoftBox>
+
+          <Card sx={{ height: "100%" }}>
+            <SoftBox display="flex" justifyContent="space-between" alignItems="center" pt={3} px={2}>
+              <SoftTypography variant="h6" fontWeight="medium" textTransform="capitalize">
+                Your Workflow
+              </SoftTypography>
+              <SoftBox display="flex" alignItems="flex-start">
+                <SoftBox color="text" mr={0.5} lineHeight={0}>
+                  <Icon color="inherit" fontSize="small">
+                    date_range
+                  </Icon>
+                </SoftBox>
+                <SoftTypography variant="button" color="text" fontWeight="regular">
+                  {getCurrentDate()}
+                </SoftTypography>
+              </SoftBox>
+            </SoftBox>
+            <SoftBox pt={3} pb={2} px={2}>
+              {isLoading ? (
+                <Spinner /> // Display spinner when isLoading is true
+              ) : (
+                <SoftBox mb={2}>
+                  <SoftTypography
+                    variant="caption"
+                    color="text"
+                    fontWeight="bold"
+                    textTransform="uppercase">
+                    Ordered by Start Time
+                  </SoftTypography>
+                </SoftBox>
+              )}
+
+              <SoftBox
+                sx={{
+                  "& .MuiTableRow-root:not(:last-child)": {
+                    "& td": {
+                      borderBottom: ({ borders: { borderWidth, borderColor } }) =>
+                        `${borderWidth[1]} solid ${borderColor}`,
+                    },
+                  },
                 }}
               >
-                {/* Options will be dynamically added using JavaScript */}
-              </select>
+                {/* Add Chrono component here */}
+                {filteredData && filteredData.length > 0 ? (
+                  <Chrono items={formatWorkflowDataForChrono(filteredData)} mode="VERTICAL" />
+                ) : (
+                  <SoftTypography variant="body2" color="textSecondary">
+                    Select a Fund to display the workflow                </SoftTypography>
+                )}
+                {/* Replace the following line with the commented version */}
+                {/* <Table columns={workflowTableData.columns} rows={workflowTableData.rows} /> */}
+              </SoftBox>
 
-              {/* SoftInput for fund ID search */}
+
             </SoftBox>
-          </Grid>
-        </Grid>
-      </SoftBox>
-
-      <SoftBox py={3}>
-
-        <SoftBox mb={3}>
-          <Grid container spacing={3}>
-
-            <Grid item xs={12} sm={6} xl={3}>
-              <MiniStatisticsCard
-                title={{ text: "Accountant" }}
-                count={records.FNDMAS ? records.FNDMAS.ACCOUNTANT : ""}
-                icon={{ color: "info", component: "public" }}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6} xl={3}>
-              <MiniStatisticsCard
-                title={{ text: "Latest Nav" }}
-                count={records.FNDMAS ? records.LatestNAVHST.NET_VALUE : ""}
-                percentage={{
-                  color: records.percentage_change < 0 ? "danger" : "success",
-                  text: records.FNDMAS ? `${records.percentage_change}%` : "",
-                }}
-                icon={{ color: "info", component: "paid" }}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6} xl={3}>
-              <MiniStatisticsCard
-                title={{ text: "Assets" }}
-                count={records.FNDMAS ? records.LatestNAVHST.ASSETS : ""}
-                percentage={{
-                  color: records.assets_percentage_change < 0 ? "danger" : "success",
-                  text: records.FNDMAS ? `${records.assets_percentage_change}%` : "",
-                }}
-                icon={{ color: "info", component: "emoji_events" }}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6} xl={3}>
-              <MiniStatisticsCard
-                title={{ text: "Liabilities" }}
-                count={records.FNDMAS ? records.LatestNAVHST.LIABILITY : ""}
-                percentage={{
-                  color: records.liabilities_percentage_change < 0 ? "danger" : "success",
-                  text: records.FNDMAS ? `${records.liabilities_percentage_change}%` : "",
-                }}
-                icon={{
-                  color: "info",
-                  component: "shopping_cart",
-                }}
-              />
-            </Grid>
-          </Grid>
+          </Card>
 
         </SoftBox>
-      </SoftBox>
-
-      <SoftBox>
-
-        <Card sx={{ height: "100%" }}>
-          <SoftBox display="flex" justifyContent="space-between" alignItems="center" pt={3} px={2}>
-            <SoftTypography variant="h6" fontWeight="medium" textTransform="capitalize">
-              Your Workflow
-            </SoftTypography>
-            <SoftBox display="flex" alignItems="flex-start">
-              <SoftBox color="text" mr={0.5} lineHeight={0}>
-                <Icon color="inherit" fontSize="small">
-                  date_range
-                </Icon>
-              </SoftBox>
-              <SoftTypography variant="button" color="text" fontWeight="regular">
-                {getCurrentDate()}
-              </SoftTypography>
-            </SoftBox>
-          </SoftBox>
-          <SoftBox pt={3} pb={2} px={2}>
-            <SoftBox mb={2}>
-              <SoftTypography
-                variant="caption"
-                color="text"
-                fontWeight="bold"
-                textTransform="uppercase">
-                Ordered by Start Time
-              </SoftTypography>
-            </SoftBox>
-            <SoftBox
-              sx={{
-                "& .MuiTableRow-root:not(:last-child)": {
-                  "& td": {
-                    borderBottom: ({ borders: { borderWidth, borderColor } }) =>
-                      `${borderWidth[1]} solid ${borderColor}`,
-                  },
-                },
-              }}
-            >
-              {/* Add Chrono component here */}
-              {filteredData && filteredData.length > 0 ? (
-                <Chrono items={formatWorkflowDataForChrono(filteredData)} mode="VERTICAL" />
-              ) : (
-                <SoftTypography variant="body2" color="textSecondary">
-                  No workflow data available.
-                </SoftTypography>
-              )}
-              {/* Replace the following line with the commented version */}
-              {/* <Table columns={workflowTableData.columns} rows={workflowTableData.rows} /> */}
-            </SoftBox>
-
-
-          </SoftBox>
-        </Card>
-
-      </SoftBox>
 
 
 
 
-      <Footer />
-    </DashboardLayout>
+        <Footer />
+      </DashboardLayout>
     </ProtectedRoute>
 
 

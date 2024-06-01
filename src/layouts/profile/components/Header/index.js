@@ -34,6 +34,7 @@ import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import Cube from "examples/Icons/Cube";
 import Document from "examples/Icons/Document";
 import Settings from "examples/Icons/Settings";
+import { useToken } from "TokenProvider";
 
 // Soft UI Dashboard React base styles
 import breakpoints from "assets/theme/base/breakpoints";
@@ -45,6 +46,13 @@ import curved0 from "assets/images/curved-images/curved0.jpg";
 function Header() {
   const [tabsOrientation, setTabsOrientation] = useState("horizontal");
   const [tabValue, setTabValue] = useState(0);
+  const { tokenData } = useToken();
+  const { token, setToken, clearToken } = useToken();
+
+  const userId = token?.userId;
+  console.log('userId',userId) ; 
+  console.log('token',token) ; 
+  const [profileData, setProfileData] = useState(null);
 
   useEffect(() => {
     // A function that sets the orientation state of the tabs.
@@ -67,6 +75,26 @@ function Header() {
   }, [tabsOrientation]);
 
   const handleSetTabValue = (event, newValue) => setTabValue(newValue);
+  useEffect(() => {
+    const fetchProfileData = async () => {
+      try {
+        const response = await fetch(`http://127.0.0.1:5000/api/getProfile/${userId}`);
+        if (response.ok) {
+          const data = await response.json();
+          setProfileData(data.user);
+        } else {
+          console.error('Error fetching user profile:', response.status);
+        }
+      } catch (error) {
+        console.error('Error fetching user profile:', error);
+      }
+    };
+
+    if (userId) {
+      fetchProfileData();
+    }
+  }, [userId]);
+
 
   return (
     <SoftBox position="relative">
@@ -113,11 +141,10 @@ function Header() {
           <Grid item>
             <SoftBox height="100%" mt={0.5} lineHeight={1}>
               <SoftTypography variant="h5" fontWeight="medium">
-                Alex Thompson
+              {profileData ? profileData.NAME : "Loading..."}
               </SoftTypography>
               <SoftTypography variant="button" color="text" fontWeight="medium">
-                CEO / Co-Founder
-              </SoftTypography>
+UMB              </SoftTypography>
             </SoftBox>
           </Grid>
           <Grid item xs={12} md={6} lg={4} sx={{ ml: "auto" }}>
@@ -128,9 +155,6 @@ function Header() {
                 onChange={handleSetTabValue}
                 sx={{ background: "transparent" }}
               >
-                <Tab label="App" icon={<Cube />} />
-                <Tab label="Message" icon={<Document />} />
-                <Tab label="Settings" icon={<Settings />} />
               </Tabs>
             </AppBar>
           </Grid>

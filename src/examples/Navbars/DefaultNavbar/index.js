@@ -91,16 +91,8 @@ function DefaultNavbar({ transparent, light, action }) {
           backdropFilter: transparent ? "none" : `saturate(200%) blur(30px)`,
         })}
       >
-        <SoftBox component={Link} to="/" py={transparent ? 1.5 : 0.75} lineHeight={1}>
-        </SoftBox>
-        <SoftBox color="inherit" display={{ xs: "none", lg: "flex" }} m={0} p={0}>
-          <DefaultNavbarLink
-            icon="key"
-            name="Settings"
-            route="/authentication/sign-in"
-            light={light}
-          />
-        </SoftBox>
+
+   
         {action &&
           (action.type === "internal" ? (
             <SoftBox display={{ xs: "none", lg: "inline-block" }}>
